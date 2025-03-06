@@ -28,6 +28,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
+	"github.com/aws/aws-sdk-go/aws/endpoints"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
@@ -125,7 +126,9 @@ func (c *EC2SDConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		return err
 	}
 	if c.Region == "" {
-		sess, err := session.NewSession()
+		sess, err := session.NewSession(&aws.Config{
+			UseDualStackEndpoint: endpoints.DualStackEndpointStateEnabled,
+		})
 		if err != nil {
 			return err
 		}
@@ -201,10 +204,11 @@ func (d *EC2Discovery) ec2Client(context.Context) (ec2iface.EC2API, error) {
 
 	sess, err := session.NewSessionWithOptions(session.Options{
 		Config: aws.Config{
-			Endpoint:    &d.cfg.Endpoint,
-			Region:      &d.cfg.Region,
-			Credentials: creds,
-			HTTPClient:  client,
+			Endpoint:             &d.cfg.Endpoint,
+			Region:               &d.cfg.Region,
+			Credentials:          creds,
+			HTTPClient:           client,
+			UseDualStackEndpoint: endpoints.DualStackEndpointStateEnabled,
 		},
 		Profile: d.cfg.Profile,
 	})
